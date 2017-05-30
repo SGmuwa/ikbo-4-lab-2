@@ -1,0 +1,30 @@
+﻿  Source.c
+c:\users\muwa\dropbox\программирование\c\turing\muwa_expandable_lenta.h(80): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(29): warning C4047: !=: "int" отличается по уровням косвенного обращения от "void *"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(35): error C2065: movl: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(39): error C2065: movr: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(43): error C2065: inc: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(47): error C2065: dec: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(51): error C2065: print: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(55): error C2065: get: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(59): error C2065: printc: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(63): error C2065: begin: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(67): error C2065: end: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(72): error C2065: comment: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(74): error C2065: error: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(76): error C2065: error: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(28): error C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(2254): note:  см. объявление "sscanf"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(114): warning C4047: <: "char *" отличается по уровням косвенного обращения от "const std::size_t"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(117): error C2065: error: необъявленный идентификатор
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(120): warning C4013: Realloc: нет определения; предполагается "extern" с возвратом типа "int"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(120): warning C4047: =: "commands *" отличается по уровням косвенного обращения от "int"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(177): warning C4013: open: нет определения; предполагается "extern" с возвратом типа "int"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(190): warning C4047: функция: "std::size_t" отличается по уровням косвенного обращения от "size_t *"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(190): warning C4024: malloc: различные типы для формального и фактического параметров 1
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(194): warning C4013: close: нет определения; предполагается "extern" с возвратом типа "int"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(181): error C4996: 'fdopen': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _fdopen. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(2448): note:  см. объявление "fdopen"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(310): warning C4047: ==: "commands *" отличается по уровням косвенного обращения от "int"
+c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(368): warning C4474: "printf" : для строки формата передано слишком много аргументов
+  c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(368): note: заполнители и их параметры ожидают переменное число аргументов в количестве 0, но было предоставлено 1

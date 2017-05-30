@@ -6,7 +6,7 @@
 //#define SDL 1
 //#endif /* !SDL */
 
-//#include <locale.h>
+#include <locale.h>
 
 #ifndef _TURING_MACHINE_H_MUWA_LABA
 #define _TURING_MACHINE_H_MUWA_LABA
@@ -43,8 +43,8 @@ enum commands
 enum commands ReadCommand(char ** input)
 {
 	char buffer[32] = { '\0' };
-	sscanf(*input, "%32s", buffer);
-	if (buffer[0] != NULL) // Если buffer был заполнен
+	sscanf_s(*input, "%32s", buffer, 32);
+	if (buffer[0] != 0) // Если buffer был заполнен
 	{
 		*input += strlen(buffer); // Добавляем то, что проглатили
 		if(**input == ' ') *input++;
@@ -126,30 +126,29 @@ errno_t ReadsCommands(const char_count fData, commands_count * out)
 	char * index = fData.A;
 	enum commands buffer;
 	enum commands * tmp; // realloc
-	out->A = (enum commands*)malloc(0*sizeof(enum commands*));
-	if(out->A == NULL) return -1;
 	out->c = 0;
-	while(index < fData.c*sizeof(char) + fData.c)
+	while (index <= fData.A + fData.c) if (ReadCommand(&index) != error) out->c++; // Посчитать количество верных комманд
+	out->A = (enum commands*)malloc(out->c*sizeof(enum commands*));
+	if (out->A == NULL) return -1; 
+	while(index <= fData.A + fData.c)
 	{
 		buffer = ReadCommand(&index);
-		if(buffer != error)
+		if (buffer != error)
 		{
-			tmp = NULL;
-			tmp = (enum commands *)realloc(out->A, out->c*sizeof(enum commands*));
-			if(tmp != NULL)
-			{
-				out->A = tmp;
-				out->c++;
-			}
-			else return -2; // error, нехватает памяти
+			out->A[(size_t)(fData.A + fData.c - index)] = buffer;
+			out->c++;
 		}
 	}
 	return 0;
 }
 
-// Присваивает все элементы массива становятся копией объекта prototype
-// Массив A, образец prototype, размер одного элемента size, количество элементов count
-void ArraySetRage(void * A, void * prototype, size_t size, size_t count)
+// Устанавливает значение каждого элемента A равным тому, что содержится в protorype.
+// A[0] = A[1] = ... = A[count] = *prototype;
+// A - массив, элементы которого все надо приравнять к *prototype
+// prototype - указатель на блок память (размера size), содержащий экземпляр, к чему должны приравняться все ячейки массива A
+// size - sizeof(тип элементов массива A и prototype) (тип *A и тип *prototype должен быть одинаковым)
+// count - количество элементов в массиве A
+void ArraySetRage(void * A, const void * prototype, size_t size, size_t count)
 {
 	size_t i, j;
 	for(i = 0; i < count; i++)
@@ -190,12 +189,14 @@ errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size)
 
 	char * buffer = NULL;
 
-	FILE * file = fopen(fname, "rb");
+	FILE * file = {0};
+	fopen_s(&file, fname, "rb");
 
 	if (file != NULL)
 	{
 		fseek(file, 0L, SEEK_END);
 		*str_size = ftell(file);
+		fseek(file, 0L, SEEK_SET);
 		buffer = (char*)malloc(*str_size);
 		if (buffer == NULL)
 		{
@@ -203,7 +204,7 @@ errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size)
 			return -4; // Не хватает памяти, но количество памяти удалось прочесть.
 		}
 		buffer[0] = '\0';
-		ArraySetRage(buffer, buffer, sizeof(char), *str_size); // Инцилизация массива
+		ArraySetRage(buffer, buffer, sizeof(char), *str_size); // Инцилизация массива (присвоит первое значение массива к всем остальным элементам)
 		if (fread(buffer, sizeof(char), *str_size / sizeof(char), file) != sizeof(char)**str_size)
 		{
 			fclose(file);
@@ -267,7 +268,7 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 				*com++;
 				if(/* *com < field.A || */*com > field.A + field.c - 1) return -1;
 				if(**com == begin) find++;
-				else if(**com == end) find--;
+				else if(**com == (enum command)end) find--;
 			}
 			*com++;
 			return 0;
@@ -288,7 +289,7 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 				*com--;
 				if(*com < field.A/* || *com > fild.A + field.c - 1*/) return -1;
 				if(**com == begin) find++;
-				else if(*com == end) find--;
+				else if(**com == (enum command)end) find--;
 			}
 			*com++;
 			return 0;
@@ -305,8 +306,13 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 	}
 }
 
+#ifndef _INC_WINDOWS
+#include <windows.h>
+#endif
+
 void UserInterface()
 {
+	
 //errno_t ReadsCommands(const char_count fData, commands_count * out)
 	char fname[_MAX_PATH] = {'\0'};
 	char_count fData = {NULL, 0};
@@ -314,6 +320,8 @@ void UserInterface()
 	commands_count fCommands = {NULL, 0};
 	struct Lenta lt = {NULL, NULL, NULL};
 	enum commands * iCom = NULL; // Указатель (индекс) на текущую команду
+	setlocale(LC_ALL, "rus");
+	printf("йцу");
 
 reset:
 	// Получение данных из файла
@@ -323,6 +331,7 @@ reset:
 	{
 		if(er != 0) printf("error code: %d\n. Please, again.", (int)er);
 		gets_s(fname, _MAX_PATH);
+		OemToCharA(fname, fname);
 		er = ReadAllDataFromFile(fname, &(fData.A), &(fData.c));
 	} while(er < 0); // Считываем все данные с файла
 	if(er > 0) printf("filesize = 0 or read error\nWarning code: %d\n", (int)er);
@@ -346,7 +355,7 @@ reset:
 	lt = ExpandableLenta_Create();
 	if(lt.position = NULL)
 	{
-		printf("ExpandableLenta_Create() return NULL (malloc)\nProgram reset...", (int)er);
+		printf("ExpandableLenta_Create() return NULL (malloc)\nError code: %d\nProgram reset...", (int)er);
 		er = 0;
 		free(fData.A);
 		if(fCommands.A != NULL) free(fCommands.A);
@@ -366,7 +375,10 @@ reset:
 #endif _TURING_MACHINE_H_MUWA_LABA
 
 
-
+void main(void)
+{
+	UserInterface();
+}
 
 
 

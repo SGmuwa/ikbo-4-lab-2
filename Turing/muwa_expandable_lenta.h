@@ -62,8 +62,9 @@ char * ExpandableLenta_GetText(struct Lenta input, char empty)
 /* Функция создаёт начальную ленту из 5 ячеек. Текущим выбирается третий из них. */
 struct Lenta ExpandableLenta_Create(void)
 {
-	struct Lenta output = { (unsigned char *)malloc(sizeof(unsigned char) * 5), NULL, NULL };
 	int i = 0;
+	struct Lenta output = { (unsigned char *)malloc(sizeof(unsigned char) * 5), NULL, NULL };
+	if (output.elements == NULL) return output;
 	for (; i < 5; i++)
 	{
 		output.elements[i] = 0;
@@ -74,7 +75,7 @@ struct Lenta ExpandableLenta_Create(void)
 }
 
 /* Функция создаёт ленту с указаным словом
-// text: Слово, которое должно быть помещено	*/
+ text: Слово, которое должно быть помещено	*/
 struct Lenta ExpandableLenta_CreateText(char * text)
 {
 	size_t count = strlen(text);

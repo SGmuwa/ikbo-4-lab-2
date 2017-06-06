@@ -39,15 +39,77 @@ enum commands
 	end			/* Переход вврх до begin, если в ячейке 1 */
 };
 
+/* Меняет местами две переменных
+left - указатель на одну переменную
+right - указатель на другую переменную
+size - размер, занимаемой переменной (размер типа, например, sizeof(int).) */
+void swap(void* left, void* right, size_t size)
+{
+	size_t i;
+	for (i = 0; i < size; i++)
+	{
+		((char*)(left))[i] = ((char*)(left))[i] + ((char*)(right))[i];
+		((char*)(right))[i] = ((char*)(left))[i] - ((char*)(right))[i]; /* a + b - b */
+		((char*)(left))[i] = ((char*)(left))[i] - ((char*)(right))[i]; /* a + b - ((a + b) - b) */
+	}
+}
+
+/* Поиск диапазона симполов. Возвращает указатель на тот символ, который ближе всего к указателю на str
+chStart и chEnd это начало и конец поиска:
+chStart = 'a'; chEnd = 'z'; Поиск: a .. z
+В случае chStart > chEnd функция сама поменяет их местами.
+В строке "ziefoka" ответ будет &'z', не смотря на то, что  &'a' будет найден раньше*/
+char * _SearchForDiapason(const char * str, int chStart, int chEnd)
+{
+	int sim, * buffer, * out = NULL; /*До сих пор не понимаю, почему рекомендуется создавать локальные переменные в самом наачале :( */
+	if (str == NULL) return NULL;
+	if (chStart > chEnd) swap(&chStart, &chEnd, sizeof(int));
+	for (sim = chStart; sim <= chEnd; sim++)
+	{
+		buffer = strchr(str, sim);
+		if (buffer != NULL && (buffer < out || out == NULL))
+		{
+			out = buffer;
+		}
+	}
+	return out;
+}
+
+/*Возвращает укзаатель на найденый в тексте str первый символ английского алфавита*/
+char * _SearchForAlphabet(const char * str)
+{
+	char * a, * b;
+	if (str == NULL) return NULL;
+	a = _SearchForDiapason(str, 'a', 'z');
+	b = _SearchForDiapason(str, 'A', 'Z');
+	if (a == NULL) return b;
+	if (b == NULL) return a;
+	if (a < b) return b;
+	return b;
+}
+
+/* Переводит на первый в строке символ алфавита. Если не найден, то возвращает указатель на первый символ '\0'. */
+void GotoToAlphabet(char ** input)
+{
+	char * buffer;
+	if (input == NULL || *input == NULL) return;
+	buffer = _SearchForAlphabet(*input);
+	if (buffer == NULL)
+	{
+		*input += strlen(*input);
+	}
+	else *input = buffer;
+}
+
 /* Данная функция вернёт команду, которая первая в строке *input. Передаётся char** чтобы можно было передвигать char** */
 enum commands ReadCommand(char ** input)
 {
 	char buffer[32] = { '\0' };
 	sscanf_s(*input, "%32s", buffer, 32);
-	if (buffer[0] != 0) // Если buffer был заполнен
+	if (buffer[0] != 0) /* Если buffer был заполнен */
 	{
-		*input += strlen(buffer); // Добавляем то, что проглатили
-		if(**input == ' ') *input++;
+		*input += strlen(buffer); /* Добавляем то, что проглатили */
+		GotoToAlphabet(input); /* Переходим на следующую команду */
 		if (strcmp(buffer, "movl") == 0)
 		{
 			return movl;
@@ -125,18 +187,18 @@ errno_t ReadsCommands(const char_count fData, commands_count * out)
 	if(fData.A == NULL) return -1;
 	char * index = fData.A;
 	enum commands buffer;
-	enum commands * tmp; // realloc
+	size_t i = 0;
 	out->c = 0;
 	while (index <= fData.A + fData.c) if (ReadCommand(&index) != error) out->c++; // Посчитать количество верных комманд
 	out->A = (enum commands*)malloc(out->c*sizeof(enum commands*));
 	if (out->A == NULL) return -1; 
+	index = fData.A;
 	while(index <= fData.A + fData.c)
 	{
 		buffer = ReadCommand(&index);
 		if (buffer != error)
 		{
-			out->A[(size_t)(fData.A + fData.c - index)] = buffer;
-			out->c++;
+			out->A[i++] = buffer;
 		}
 	}
 	return 0;
@@ -240,23 +302,23 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 	{
 	case movl:
 		update->position--;
-		*com++;
+		(*com)++;
 		return 0;
 	case movr:
 		update->position++;
-		*com++;
+		(*com)++;
 		return 0;
 	case inc:
 		update->position[0]++;
-		*com++;
+		(*com)++;
 		return 0;
 	case dec:
 		update->position[0]--;
-		*com++;
+		(*com)++;
 		return 0;
 	case printc:
 		printf("%c\n", update->position[0]);
-		*com++;
+		(*com)++;
 		return 0;
 	case begin:
 		if (update->position[0] == 0)
@@ -265,17 +327,17 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			int find = 1;
 			while(find != 0)
 			{
-				*com++;
+				(*com)++;
 				if(/* *com < field.A || */*com > field.A + field.c - 1) return -1;
 				if(**com == begin) find++;
 				else if(**com == (enum command)end) find--;
 			}
-			*com++;
+			(*com)++;
 			return 0;
 		}
 		else
 		{
-			*com++;
+			(*com)++;
 			return 0;
 		}
 		return 0;
@@ -286,22 +348,22 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			int find = -1;
 			while(find != 0)
 			{
-				*com--;
+				(*com)--;
 				if(*com < field.A/* || *com > fild.A + field.c - 1*/) return -1;
 				if(**com == begin) find++;
 				else if(**com == (enum command)end) find--;
 			}
-			*com++;
+			(*com)++;
 			return 0;
 		}
 		else
 		{
-			*com++;
+			(*com)++;
 			return 0;
 		}
 		return 0;
 	default:
-		*com++;
+		(*com)++;
 		return 1;
 	}
 }
@@ -314,7 +376,7 @@ void UserInterface()
 {
 	
 //errno_t ReadsCommands(const char_count fData, commands_count * out)
-	char fname[_MAX_PATH] = {'\0'};
+	char fname[_MAX_PATH] = "C:\\Users\\Muwa\\Dropbox\\Программирование\\C\\Turing laba 2 prog sem 2\\print 2.txt";//{'\0'};
 	char_count fData = {NULL, 0};
 	errno_t er = 0; // ошибки работы
 	commands_count fCommands = {NULL, 0};
@@ -330,8 +392,8 @@ reset:
 	do
 	{
 		if(er != 0) printf("error code: %d\n. Please, again.", (int)er);
-		gets_s(fname, _MAX_PATH);
-		OemToCharA(fname, fname);
+		//gets_s(fname, _MAX_PATH);
+		//OemToCharA(fname, fname);
 		er = ReadAllDataFromFile(fname, &(fData.A), &(fData.c));
 	} while(er < 0); // Считываем все данные с файла
 	if(er > 0) printf("filesize = 0 or read error\nWarning code: %d\n", (int)er);
@@ -353,7 +415,7 @@ reset:
 	
 	// Прохождение шагов
 	lt = ExpandableLenta_Create();
-	if(lt.position = NULL)
+	if(lt.position == NULL)
 	{
 		printf("ExpandableLenta_Create() return NULL (malloc)\nError code: %d\nProgram reset...", (int)er);
 		er = 0;
@@ -367,6 +429,7 @@ reset:
 	iCom = fCommands.A;
 	
 	while(Step(fCommands, &iCom, &lt) >= 0);
+	printf("%s", ExpandableLenta_GetText(lt, '_'));
 	free(fCommands.A); fCommands.A = NULL; fCommands.c = 0;
 	free(lt.elements); lt.elements = lt.position = lt.top = NULL;
 	return;

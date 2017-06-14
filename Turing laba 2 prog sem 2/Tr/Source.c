@@ -1,17 +1,20 @@
+/*Разработал Сидоренко Михаил (Sidorenko Mikhail), первая версия от 04.2017*/
+
 #pragma once
-
-/* Secure Development Lifecycle */
-//#ifndef SDL
-/* Поставьте SDL 0, если Ваш компилятор не поддерживает данную технологию. */
-//#define SDL 1
-//#endif /* !SDL */
-
-#include <locale.h>
 
 #ifndef _TURING_MACHINE_H_MUWA_LABA
 #define _TURING_MACHINE_H_MUWA_LABA
 
+
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "../../Turing/Muwa_expandable_lenta.h"
+
+#ifndef _INC_LOCALE
+#include <locale.h>
+#endif
 
 #ifndef _INC_STDIO
 #include <stdio.h>
@@ -45,7 +48,7 @@ right - указатель на другую переменную
 size - размер, занимаемой переменной (размер типа, например, sizeof(int).) */
 void swap(void* left, void* right, size_t size)
 {
-	size_t i;
+	register size_t i;
 	for (i = 0; i < size; i++)
 	{
 		((char*)(left))[i] = ((char*)(left))[i] + ((char*)(right))[i];
@@ -54,16 +57,16 @@ void swap(void* left, void* right, size_t size)
 	}
 }
 
-/* Поиск диапазона симполов. Возвращает указатель на тот символ, который ближе всего к указателю на str
+/* Поиск диапазона символов. Возвращает указатель на тот символ, который ближе всего к указателю на str
 chStart и chEnd это начало и конец поиска:
 chStart = 'a'; chEnd = 'z'; Поиск: a .. z
 В случае chStart > chEnd функция сама поменяет их местами.
 В строке "ziefoka" ответ будет &'z', не смотря на то, что  &'a' будет найден раньше*/
-char * _SearchForDiapason(const char * str, int chStart, int chEnd)
+char * _SearchForDiapason(const char * str, char chStart, char chEnd)
 {
-	int sim, * buffer, * out = NULL; /*До сих пор не понимаю, почему рекомендуется создавать локальные переменные в самом наачале :( */
+	char sim, * buffer, * out = NULL; /*До сих пор не понимаю, почему рекомендуется создавать локальные переменные в самом наачале :( */
 	if (str == NULL) return NULL;
-	if (chStart > chEnd) swap(&chStart, &chEnd, sizeof(int));
+	if (chStart > chEnd) swap(&chStart, &chEnd, sizeof(char));
 	for (sim = chStart; sim <= chEnd; sim++)
 	{
 		buffer = strchr(str, sim);
@@ -105,7 +108,7 @@ void GotoToAlphabet(char ** input)
 enum commands ReadCommand(char ** input)
 {
 	char buffer[32] = { '\0' };
-	sscanf_s(*input, "%32s", buffer, 32);
+	sscanf(*input, "%32s", buffer);
 	if (buffer[0] != 0) /* Если buffer был заполнен */
 	{
 		*input += strlen(buffer); /* Добавляем то, что проглатили */
@@ -164,17 +167,14 @@ typedef struct
 
 typedef struct
 {
-	char * A; // Array
-	size_t c; // count
+	char * A; /* Array */
+	size_t c; /* count */
 } char_count;
 
-// Функция преобразует текст в набор команд. Используется malloc и realloc в каждой итерации.
-/*
+/* Функция преобразует текст в набор команд. Используется malloc и realloc в каждой итерации.
 char_count fData - данные, которые надо преобразовать в enum commands
 commands_count * out - адрес, куда должны быть помещены данные. Используется Malloc для out->A
 Возвращает: код ошибки.
-*/
-/*
 Ошибки:
 -1 - malloc(0) вернул NULL.
 -2 - realloc вернул NULL
@@ -183,13 +183,14 @@ commands_count * out - адрес, куда должны быть помещены данные. Используется Mal
 */
 errno_t ReadsCommands(const char_count fData, commands_count * out)
 {
-// enum commands ReadCommand(char ** input)
+/* enum commands ReadCommand(char ** input) */
 	if(fData.A == NULL) return -1;
 	char * index = fData.A;
 	enum commands buffer;
 	size_t i = 0;
 	out->c = 0;
-	while (index <= fData.A + fData.c) if (ReadCommand(&index) != error) out->c++; // Посчитать количество верных комманд
+	while (index <= fData.A + fData.c) if (ReadCommand(&index) != error)
+		out->c++; /* Посчитать количество верных комманд */
 	out->A = (enum commands*)malloc(out->c*sizeof(enum commands*));
 	if (out->A == NULL) return -1; 
 	index = fData.A;
@@ -204,12 +205,12 @@ errno_t ReadsCommands(const char_count fData, commands_count * out)
 	return 0;
 }
 
-// Устанавливает значение каждого элемента A равным тому, что содержится в protorype.
-// A[0] = A[1] = ... = A[count] = *prototype;
-// A - массив, элементы которого все надо приравнять к *prototype
-// prototype - указатель на блок память (размера size), содержащий экземпляр, к чему должны приравняться все ячейки массива A
-// size - sizeof(тип элементов массива A и prototype) (тип *A и тип *prototype должен быть одинаковым)
-// count - количество элементов в массиве A
+/* Устанавливает значение каждого элемента A равным тому, что содержится в protorype.
+A[0] = A[1] = ... = A[count] = *prototype;
+A - массив, элементы которого все надо приравнять к *prototype
+prototype - указатель на блок память (размера size), содержащий экземпляр, к чему должны приравняться все ячейки массива A
+size - sizeof(тип элементов массива A и prototype) (тип *A и тип *prototype должен быть одинаковым)
+count - количество элементов в массиве A */
 void ArraySetRage(void * A, const void * prototype, size_t size, size_t count)
 {
 	size_t i, j;
@@ -230,23 +231,23 @@ void ArraySetRage(void * A, const void * prototype, size_t size, size_t count)
 #include <sys/stat.h>
 #endif
 
-// Используется malloc. Считывает все данные с файла
-// fname - имя файла, который нужно открыть и прочитать
-// str - указатель на строку, куда надо записывать всё, что было прочитано с файла
-// str_size - сюда указывется размер файла. Возвращается, когда функция возвращает значения -4, 0, 1, 2, 3
-// Возвращаемое значение: код ошибки.
-// Ошибки:
-// -1 Не удалось открыть дескриптор для чтения
-// -2 Не удалось открыть файл для бинарного чтения
-// -3 Не удалось получить статитсику файла, о его размере
-// -4 Не удалось выделить оперативную память для помещения содержимого файла в оперативную память
-// Предупреждения:
-// 2 Не только не совпадает количество прочитанной информации, но и размер выделенной памяти оказался 0.
-// 1 Прочитанное количество элементов не совподает с размером файла.
-// 3 Было успешно выделено 0 байт в оперативную память.
-// Успешные ситуации:
-// 0 Успешно удалось поместить содержимое файла fname в участо памяти, на который теперь указывает *str, а размер содержимого помещён в *str_size.
-errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size)
+/* Используется malloc. Считывает все данные с файла
+fname - имя файла, который нужно открыть и прочитать
+str - указатель на строку, куда надо записывать всё, что было прочитано с файла
+str_size - сюда указывется размер файла. Возвращается, когда функция возвращает значения -4, 0, 1, 2, 3
+Возвращаемое значение: код ошибки.
+Ошибки:
+-1 Не удалось открыть дескриптор для чтения
+-2 Не удалось открыть файл для бинарного чтения
+-3 Не удалось получить статитсику файла, о его размере
+-4 Не удалось выделить оперативную память для помещения содержимого файла в оперативную память
+Предупреждения:
+2 Не только не совпадает количество прочитанной информации, но и размер выделенной памяти оказался 0.
+1 Прочитанное количество элементов не совподает с размером файла.
+3 Было успешно выделено 0 байт в оперативную память.
+Успешные ситуации:
+0 Успешно удалось поместить содержимое файла fname в участо памяти, на который теперь указывает *str, а размер содержимого помещён в *str_size.*/
+errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size) 
 {
 
 	char * buffer = NULL;
@@ -263,33 +264,32 @@ errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size)
 		if (buffer == NULL)
 		{
 			fclose(file);
-			return -4; // Не хватает памяти, но количество памяти удалось прочесть.
+			return -4; /* Не хватает памяти, но количество памяти удалось прочесть. */
 		}
 		buffer[0] = '\0';
-		ArraySetRage(buffer, buffer, sizeof(char), *str_size); // Инцилизация массива (присвоит первое значение массива к всем остальным элементам)
+		ArraySetRage(buffer, buffer, sizeof(char), *str_size); /* Инцилизация массива (присвоит первое значение массива к всем остальным элементам) */
 		if (fread(buffer, sizeof(char), *str_size / sizeof(char), file) != sizeof(char)**str_size)
 		{
 			fclose(file);
 			*str = buffer;
-			if (*str_size == 0) return 2; // Не только не совпадает, но и размер выделенной памяти оказался 0.
-			else return 1; // warning: прочитанное количество элементов не совподает с размером файла.
+			if (*str_size == 0) return 2; /* Не только не совпадает, но и размер выделенной памяти оказался 0. */
+			else return 1; /* warning: прочитанное количество элементов не совподает с размером файла. */
 		}
 		fclose(file);
 		*str = buffer;
-		if (*str_size == 0) return 3; // Было успешно выделено 0 байт в оперативную память.
+		if (*str_size == 0) return 3; /* Было успешно выделено 0 байт в оперативную память. */
 		else return 0;
 	}
 	else
 	{
-		return -2; // Не удалось октрыть файл для бинарного чтения
+		return -2; /* Не удалось октрыть файл для бинарного чтения */
 	}
 }
 
-// field - поле со списоком команд. Требуется для being и end
-// com - указатель на команду из field, которую следует обработать
-// update - лента, на которую помещена вся память
-// Возвращаемое значение:
-/*
+/* field - поле со списоком команд. Требуется для being и end
+com - указатель на команду из field, которую следует обработать
+update - лента, на которую помещена вся память
+Возвращаемое значение:
 -1 Комманда com вне границах массива field.A .. field.A + field.c - 1
 0 Всё сработало нормально
 1 Не понятно, что делать с данной командой
@@ -323,14 +323,14 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 	case begin:
 		if (update->position[0] == 0)
 		{
-			// переход в end + 1
+			/* переход в end + 1 */
 			int find = 1;
 			while(find != 0)
 			{
 				(*com)++;
 				if(/* *com < field.A || */*com > field.A + field.c - 1) return -1;
 				if(**com == begin) find++;
-				else if(**com == (enum command)end) find--;
+				else if(**com == end) find--;
 			}
 			(*com)++;
 			return 0;
@@ -340,18 +340,17 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			(*com)++;
 			return 0;
 		}
-		return 0;
 	case end:
 		if (update->position[0] != 0)
 		{
-			// переход обратно на родственную begin + 1.
+			/* переход обратно на родственную begin + 1. */
 			int find = -1;
 			while(find != 0)
 			{
 				(*com)--;
 				if(*com < field.A/* || *com > fild.A + field.c - 1*/) return -1;
 				if(**com == begin) find++;
-				else if(**com == (enum command)end) find--;
+				else if(**com == end) find--;
 			}
 			(*com)++;
 			return 0;
@@ -361,7 +360,6 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			(*com)++;
 			return 0;
 		}
-		return 0;
 	default:
 		(*com)++;
 		return 1;
@@ -375,31 +373,31 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 void UserInterface()
 {
 	
-//errno_t ReadsCommands(const char_count fData, commands_count * out)
-	char fname[_MAX_PATH] = "C:\\Users\\Muwa\\Dropbox\\Программирование\\C\\Turing laba 2 prog sem 2\\print 2.txt";//{'\0'};
+/* errno_t ReadsCommands(const char_count fData, commands_count * out) */
+	char fname[_MAX_PATH] = {'\0'};
 	char_count fData = {NULL, 0};
-	errno_t er = 0; // ошибки работы
+	errno_t er = 0; /* ошибки работы */
 	commands_count fCommands = {NULL, 0};
 	struct Lenta lt = {NULL, NULL, NULL};
-	enum commands * iCom = NULL; // Указатель (индекс) на текущую команду
+	enum commands * iCom = NULL; /* Указатель (индекс) на текущую команду */
 	setlocale(LC_ALL, "rus");
 	printf("йцу");
 
 reset:
-	// Получение данных из файла
+	/* Получение данных из файла */
 
 	printf("Hello. Input filename: ");
 	do
 	{
 		if(er != 0) printf("error code: %d\n. Please, again.", (int)er);
-		//gets_s(fname, _MAX_PATH);
-		//OemToCharA(fname, fname);
+		gets_s(fname, _MAX_PATH);
+		OemToCharA(fname, fname);
 		er = ReadAllDataFromFile(fname, &(fData.A), &(fData.c));
-	} while(er < 0); // Считываем все данные с файла
+	} while(er < 0); /* Считываем все данные с файла */
 	if(er > 0) printf("filesize = 0 or read error\nWarning code: %d\n", (int)er);
 
 	er = 0;
-	// Преобразование данных файла в комманды
+	/* Преобразование данных файла в комманды */
 	er = ReadsCommands(fData, &fCommands);
 	if(er < 0)
 	{
@@ -413,7 +411,7 @@ reset:
 	}
 	free(fData.A); fData.A = NULL; fData.c = 0;
 	
-	// Прохождение шагов
+	/* Прохождение шагов */
 	lt = ExpandableLenta_Create();
 	if(lt.position == NULL)
 	{
@@ -425,7 +423,7 @@ reset:
 		fname[0] = '\0';
 		goto reset;
 	}
-//errno_t Step(const commands_count field, enum commands * com, struct Lenta * update)
+/*errno_t Step(const commands_count field, enum commands * com, struct Lenta * update) */
 	iCom = fCommands.A;
 	
 	while(Step(fCommands, &iCom, &lt) >= 0);
@@ -441,6 +439,7 @@ reset:
 void main(void)
 {
 	UserInterface();
+	scanf("%*s");
 }
 
 

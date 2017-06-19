@@ -1,19 +1,34 @@
 /*Разработал Сидоренко Михаил (Sidorenko Mikhail), первая версия от 04.2017*/
 
+
 #pragma once
 
 #ifndef _TURING_MACHINE_H_MUWA_LABA
 #define _TURING_MACHINE_H_MUWA_LABA
 
-
+/* Инструкция, которая компилирует программу без использования технологии CRT (менее безопасно, но кроссплатформенно)*/
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+/* Инструкция, которая отключает Windows.h
+Возможны проблемы при работе с руссим языком.*/
+#define NO_WINDOWS
+/* Инструкция, которая отключает переключение locale и отключает библиотеку locale.h.
+Возможны проблемы с русским языком.*/
+#define NO_LOCALE
+
+#ifdef _CRT_SECURE_NO_WARNINGS
+extern char * gets(char * string);
+#endif
+
+/* Библиотека реализует такой абстрактный объект, как бесконечная лента. */
 #include "../../Turing/Muwa_expandable_lenta.h"
 
-#ifndef _INC_LOCALE
-#include <locale.h>
+#ifndef NO_LOCALE
+	#ifndef _INC_LOCALE
+		#include <locale.h>
+	#endif
 #endif
 
 #ifndef _INC_STDIO
@@ -27,6 +42,20 @@
 #ifndef _INC_STDLIB
 #include <stdlib.h>
 #endif
+
+/* Считывает текст из stdin и помещает в string
+string - место сохранения текста из stdin
+size - максимальный размер, который может быть помещён в string (не используется при _CRT_SECURE_NO_WARNINGS)*/
+char *__cdecl gets_u(char * string, size_t _size)
+{
+#ifdef _CRT_SECURE_NO_WARNINGS
+	return fgets(string, _size, stdin);
+#else
+	return gets_s(string, _size);
+#endif
+}
+
+/* Перечисление существующих команд */
 enum commands
 {
 	error,		/* При чтении возникла ошибка */
@@ -57,6 +86,51 @@ void swap(void* left, void* right, size_t size)
 	}
 }
 
+#ifndef _INC_STDLIB
+/* Отвечает на вопрос, равны ли два блока памяти. */
+char IsEqute(const void * A, const void * B, size_t size)
+{
+	register size_t i = 0u;
+	for (; i < size; i++)
+	{
+		if (((char*)A)[i] != ((char*)B)[i]) return (char)0;
+	}
+	return (char)1;
+}
+
+void Equate(void * A, const void * B, size_t size)
+{
+#ifdef _CRT_SECURE_NO_WARNINGS
+	memcpy(A, B, size);
+#else
+	register size_t i = 0u;
+	for (; i < size; i++)
+	{
+		((char*)A)[i] = ((char*)B)[i];
+	}
+#endif
+}
+
+/* Находит минимальное из данных.
+count - количество данных
+size - размер одной единицы данных
+result - сюда будет отправляться ответ
+[образец] - размер блока, который следует исключить из выборки
+[данные], [данные]... - среди них идёт поиск минимального. Исключаются те, которые равны образцу*/
+void _SearchMinimumBesides(size_t count, size_t size, void * result,...)
+{
+	size_t i = 0;
+	char * index = (char*)result + size;
+	if (count == 0 || size == 0 || result == NULL) return;
+	Equate(result, index, size);
+	i++, index += size;
+	for (; i < count; i++, index += size)
+	{
+
+	}
+}
+#endif
+
 /* Поиск диапазона символов. Возвращает указатель на тот символ, который ближе всего к указателю на str
 chStart и chEnd это начало и конец поиска:
 chStart = 'a'; chEnd = 'z'; Поиск: a .. z
@@ -81,14 +155,42 @@ char * _SearchForDiapason(const char * str, char chStart, char chEnd)
 /*Возвращает укзаатель на найденый в тексте str первый символ английского алфавита*/
 char * _SearchForAlphabet(const char * str)
 {
-	char * a, * b;
+	char * a, * b, * c;
 	if (str == NULL) return NULL;
 	a = _SearchForDiapason(str, 'a', 'z');
 	b = _SearchForDiapason(str, 'A', 'Z');
-	if (a == NULL) return b;
-	if (b == NULL) return a;
-	if (a < b) return b;
-	return b;
+	c = _SearchForDiapason(str, '*', '*');
+	if (a == NULL)
+	{
+		if (b == NULL) return c;
+		else if (c == NULL) return b;
+		else if (c < b) return c;
+		else return b;
+	}
+	else if (b == NULL)
+	{
+		if (a == NULL) return c;
+		else if (c == NULL) return a;
+		else if (c < a) return c;
+		else return a;
+	}
+	else if (c == NULL)
+	{
+		if (a == NULL) return b;
+		else if (b == NULL) return a;
+		else if (b < a) return b;
+		else return a;
+	}
+	else if (a < b)
+	{
+		if (a < c) return a;
+		else return c;
+	}
+	else /* b < a */
+	{
+		if (c < b) return c;
+		else return b;
+	}
 }
 
 /* Переводит на первый в строке символ алфавита. Если не найден, то возвращает указатель на первый символ '\0'. */
@@ -108,11 +210,12 @@ void GotoToAlphabet(char ** input)
 enum commands ReadCommand(char ** input)
 {
 	char buffer[32] = { '\0' };
+	GotoToAlphabet(input);
 	sscanf(*input, "%32s", buffer);
 	if (buffer[0] != 0) /* Если buffer был заполнен */
 	{
 		*input += strlen(buffer); /* Добавляем то, что проглатили */
-		GotoToAlphabet(input); /* Переходим на следующую команду */
+		if(buffer[0] != '*') GotoToAlphabet(input); /* Переходим на следующую команду */
 		if (strcmp(buffer, "movl") == 0)
 		{
 			return movl;
@@ -151,12 +254,16 @@ enum commands ReadCommand(char ** input)
 		}
 		else if (strcmp(buffer, "*") == 0)
 		{
-			while(**input != '\n' || **input != EOF || **input != '\0') *input++;
+			while (**input != '\n' && **input != EOF && **input != '\0') (*input)++;
 			return comment;
 		}
 		else return error;
 	}
-	else return error;
+	else
+	{
+		(*input)++;
+		return error;
+	}
 }
 /* Структура хранит в себе команды и количество комманд */
 typedef struct
@@ -189,12 +296,12 @@ errno_t ReadsCommands(const char_count fData, commands_count * out)
 	enum commands buffer;
 	size_t i = 0;
 	out->c = 0;
-	while (index <= fData.A + fData.c) if (ReadCommand(&index) != error)
+	while (index < fData.A + fData.c - 1) if (ReadCommand(&index) != error)
 		out->c++; /* Посчитать количество верных комманд */
 	out->A = (enum commands*)malloc(out->c*sizeof(enum commands*));
 	if (out->A == NULL) return -1; 
 	index = fData.A;
-	while(index <= fData.A + fData.c)
+	while(index < fData.A + fData.c - 1)
 	{
 		buffer = ReadCommand(&index);
 		if (buffer != error)
@@ -222,7 +329,7 @@ void ArraySetRage(void * A, const void * prototype, size_t size, size_t count)
 		}
 	}
 }
-
+/*
 #ifndef _INC_FCNTL
 #include <fcntl.h>
 #endif
@@ -230,7 +337,7 @@ void ArraySetRage(void * A, const void * prototype, size_t size, size_t count)
 #ifndef _fstat
 #include <sys/stat.h>
 #endif
-
+*/
 /* Используется malloc. Считывает все данные с файла
 fname - имя файла, который нужно открыть и прочитать
 str - указатель на строку, куда надо записывать всё, что было прочитано с файла
@@ -253,12 +360,15 @@ errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size)
 	char * buffer = NULL;
 
 	FILE * file = {0};
+#ifdef _CRT_SECURE_NO_WARNINGS
+	file = fopen(fname, "rb");
+#else
 	fopen_s(&file, fname, "rb");
-
+#endif
 	if (file != NULL)
 	{
 		fseek(file, 0L, SEEK_END);
-		*str_size = ftell(file);
+		*str_size = ftell(file) + 1; /* На содержимое файла + признак окончания данных */
 		fseek(file, 0L, SEEK_SET);
 		buffer = (char*)malloc(*str_size);
 		if (buffer == NULL)
@@ -268,7 +378,7 @@ errno_t ReadAllDataFromFile(const char * fname, char ** str, size_t * str_size)
 		}
 		buffer[0] = '\0';
 		ArraySetRage(buffer, buffer, sizeof(char), *str_size); /* Инцилизация массива (присвоит первое значение массива к всем остальным элементам) */
-		if (fread(buffer, sizeof(char), *str_size / sizeof(char), file) != sizeof(char)**str_size)
+		if (fread(buffer, sizeof(char), *str_size / sizeof(char), file) + 1 != sizeof(char)**str_size)
 		{
 			fclose(file);
 			*str = buffer;
@@ -293,9 +403,11 @@ update - лента, на которую помещена вся память
 -1 Комманда com вне границах массива field.A .. field.A + field.c - 1
 0 Всё сработало нормально
 1 Не понятно, что делать с данной командой
+2 Ошибка чтения из stdin.
 */
 errno_t Step(const commands_count field, enum commands ** com, struct Lenta * update)
 {
+	auto unsigned short int buffer = 0;
 	if(*com < field.A || *com > field.A + field.c - 1) return -1;
 	ExpandableLenta_MemoryAdjustment(update);
 	switch (**com)
@@ -319,6 +431,21 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 	case printc:
 		printf("%c\n", update->position[0]);
 		(*com)++;
+		return 0;
+	case print:
+		printf("%hu\n", (unsigned short int)update->position[0]);
+		(*com)++;
+		return 0;
+	case get:
+#ifdef _CRT_SECURE_NO_WARNINGS
+		printf("byte: ");
+		(*com)++;
+		if (scanf("%hu", &buffer) != 1) return 2;
+#else
+		printf_s("byte: ");
+		if (scanf_s("%hu", &buffer) != 1) return 2;
+#endif
+		update->position[0] = (char)buffer;
 		return 0;
 	case begin:
 		if (update->position[0] == 0)
@@ -366,32 +493,49 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 	}
 }
 
-#ifndef _INC_WINDOWS
-#include <windows.h>
+#ifndef NO_WINDOWS
+	#ifndef _INC_WINDOWS
+		#include <Windows.h>
+	#endif
 #endif
 
-void UserInterface()
+
+void UserInterface(int argc, char * argv[])
 {
-	
 /* errno_t ReadsCommands(const char_count fData, commands_count * out) */
 	char fname[_MAX_PATH] = {'\0'};
 	char_count fData = {NULL, 0};
+	char * ToClear = NULL; /* То, что будет помещено в эту переменную, будет очищено. Использукется для вывода ленты*/
 	errno_t er = 0; /* ошибки работы */
 	commands_count fCommands = {NULL, 0};
 	struct Lenta lt = {NULL, NULL, NULL};
 	enum commands * iCom = NULL; /* Указатель (индекс) на текущую команду */
-	setlocale(LC_ALL, "rus");
-	printf("йцу");
-
+	#ifndef NO_LOCALE
+		setlocale(LC_ALL, "rus");
+	#endif
+	if (argc == 2)
+	{
+#ifdef _CRT_SECURE_NO_WARNINGS
+		if (memcpy(fname, argv[1], strlen(argv[1])) == fname)
+#else
+		if (memcpy_s(fname, _MAX_PATH, argv[1], strlen(argv[1])) == 0)
+#endif
+		{
+			goto filename_ready;
+		}
+	}
 reset:
 	/* Получение данных из файла */
-
-	printf("Hello. Input filename: ");
+	
+	printf("Filename: ");
 	do
 	{
 		if(er != 0) printf("error code: %d\n. Please, again.", (int)er);
-		gets_s(fname, _MAX_PATH);
-		OemToCharA(fname, fname);
+		gets_u(fname, _MAX_PATH);
+	filename_ready:
+		#ifndef NO_WINDOWS
+			OemToCharA(fname, fname);
+		#endif
 		er = ReadAllDataFromFile(fname, &(fData.A), &(fData.c));
 	} while(er < 0); /* Считываем все данные с файла */
 	if(er > 0) printf("filesize = 0 or read error\nWarning code: %d\n", (int)er);
@@ -427,19 +571,30 @@ reset:
 	iCom = fCommands.A;
 	
 	while(Step(fCommands, &iCom, &lt) >= 0);
-	printf("%s", ExpandableLenta_GetText(lt, '_'));
+	ToClear = ExpandableLenta_GetText(lt, '_');
+#ifdef _CRT_SECURE_NO_WARNINGS
+	printf("\nLenta:\n%s", ToClear);
+#else
+	printf_s("\nLenta:\n%s", ToClear, strlen(ToClear));
+#endif
 	free(fCommands.A); fCommands.A = NULL; fCommands.c = 0;
 	free(lt.elements); lt.elements = lt.position = lt.top = NULL;
+	free(ToClear);
 	return;
 }
 
 #endif _TURING_MACHINE_H_MUWA_LABA
 
 
-void main(void)
+void main(int argc, char * argv[])
 {
-	UserInterface();
-	scanf("%*s");
+	char flag[2] = { 0 };
+	while (1)
+	{
+		UserInterface(argc, argv);
+		gets_u(&flag, 2u);
+		if (*flag == 'q' || *flag == 'Q') return;
+	}
 }
 
 

@@ -19,6 +19,9 @@
 #define NO_LOCALE
 
 #ifdef _CRT_SECURE_NO_WARNINGS
+/* В visual studio нет явного прототипа этой функции, поэтому мне прилось ввести её вучную.
+Считывает поток stdin до символа EOF или '\n' (я не знаю, в общем, до нажатия ENTER)
+string - область памяти, куда нужно поместить результат.*/
 extern char * gets(char * string);
 #endif
 
@@ -43,32 +46,36 @@ extern char * gets(char * string);
 #include <stdlib.h>
 #endif
 
+
+
+
 /* Считывает текст из stdin и помещает в string
 string - место сохранения текста из stdin
 size - максимальный размер, который может быть помещён в string (не используется при _CRT_SECURE_NO_WARNINGS)*/
 char *__cdecl gets_u(char * string, size_t _size)
 {
 #ifdef _CRT_SECURE_NO_WARNINGS
-	return fgets(string, _size, stdin);
+	return fgets(string, (int)_size, stdin);
 #else
-	return gets_s(string, _size);
+	return gets_s(string, (rsize_t)_size);
 #endif
 }
 
 /* Перечисление существующих команд */
 enum commands
 {
-	error,		/* При чтении возникла ошибка */
-	comment,	/* * - строка-комментарии */
-	movl,		/* Движение влево */
-	movr,		/* Движение вправо */
-	inc,		/* Добавить в ячейку 1 */
-	dec,		/* Убавить из ячейки 1 */
-	print,		/* Вывод ячейки */
-	get,		/* Считать 1 байт с клавиатуры и записать в текущую ячейку */
-	printc,		/* Вывод значения текущей ячейки как символ */
-	begin,		/* переход до end, если в ячейке 0 */
-	end			/* Переход вврх до begin, если в ячейке 1 */
+	com_error,		/* При чтении возникла ошибка */
+	com_comment,	/* * - строка-комментарии */
+	com_movl,		/* Движение влево */
+	com_movr,		/* Движение вправо */
+	com_inc,		/* Добавить в ячейку 1 */
+	com_dec,		/* Убавить из ячейки 1 */
+	com_print,		/* Вывод ячейки */
+	com_getc,		/* Считать 1 символ с клавиатуры и записать в текущую ячейку */
+	com_get,		/* Считать 1 байт с клавиатуры и записать в текущую ячейку */
+	com_printc,		/* Вывод значения текущей ячейки как символ */
+	com_begin,		/* переход до end, если в ячейке 0 */
+	com_end			/* Переход вврх до begin, если в ячейке 1 или более */
 };
 
 /* Меняет местами две переменных
@@ -85,51 +92,6 @@ void swap(void* left, void* right, size_t size)
 		((char*)(left))[i] = ((char*)(left))[i] - ((char*)(right))[i]; /* a + b - ((a + b) - b) */
 	}
 }
-
-#ifndef _INC_STDLIB
-/* Отвечает на вопрос, равны ли два блока памяти. */
-char IsEqute(const void * A, const void * B, size_t size)
-{
-	register size_t i = 0u;
-	for (; i < size; i++)
-	{
-		if (((char*)A)[i] != ((char*)B)[i]) return (char)0;
-	}
-	return (char)1;
-}
-
-void Equate(void * A, const void * B, size_t size)
-{
-#ifdef _CRT_SECURE_NO_WARNINGS
-	memcpy(A, B, size);
-#else
-	register size_t i = 0u;
-	for (; i < size; i++)
-	{
-		((char*)A)[i] = ((char*)B)[i];
-	}
-#endif
-}
-
-/* Находит минимальное из данных.
-count - количество данных
-size - размер одной единицы данных
-result - сюда будет отправляться ответ
-[образец] - размер блока, который следует исключить из выборки
-[данные], [данные]... - среди них идёт поиск минимального. Исключаются те, которые равны образцу*/
-void _SearchMinimumBesides(size_t count, size_t size, void * result,...)
-{
-	size_t i = 0;
-	char * index = (char*)result + size;
-	if (count == 0 || size == 0 || result == NULL) return;
-	Equate(result, index, size);
-	i++, index += size;
-	for (; i < count; i++, index += size)
-	{
-
-	}
-}
-#endif
 
 /* Поиск диапазона символов. Возвращает указатель на тот символ, который ближе всего к указателю на str
 chStart и chEnd это начало и конец поиска:
@@ -218,51 +180,55 @@ enum commands ReadCommand(char ** input)
 		if(buffer[0] != '*') GotoToAlphabet(input); /* Переходим на следующую команду */
 		if (strcmp(buffer, "movl") == 0)
 		{
-			return movl;
+			return com_movl;
 		}
 		else if (strcmp(buffer, "movr") == 0)
 		{
-			return movr;
+			return com_movr;
 		}
 		else if (strcmp(buffer, "inc") == 0)
 		{
-			return inc;
+			return com_inc;
 		}
 		else if (strcmp(buffer, "dec") == 0)
 		{
-			return dec;
+			return com_dec;
 		}
 		else if (strcmp(buffer, "print") == 0)
 		{
-			return print;
+			return com_print;
+		}
+		else if (strcmp(buffer, "getc") == 0)
+		{
+			return com_getc;
 		}
 		else if (strcmp(buffer, "get") == 0)
 		{
-			return get;
+			return com_get;
 		}
 		else if (strcmp(buffer, "printc") == 0)
 		{
-			return printc;
+			return com_printc;
 		}
 		else if (strcmp(buffer, "begin") == 0)
 		{
-			return begin;
+			return com_begin;
 		}
 		else if (strcmp(buffer, "end") == 0)
 		{
-			return end;
+			return com_end;
 		}
 		else if (strcmp(buffer, "*") == 0)
 		{
 			while (**input != '\n' && **input != EOF && **input != '\0') (*input)++;
-			return comment;
+			return com_comment;
 		}
-		else return error;
+		else return com_error;
 	}
 	else
 	{
 		(*input)++;
-		return error;
+		return com_error;
 	}
 }
 /* Структура хранит в себе команды и количество комманд */
@@ -296,7 +262,7 @@ errno_t ReadsCommands(const char_count fData, commands_count * out)
 	enum commands buffer;
 	size_t i = 0;
 	out->c = 0;
-	while (index < fData.A + fData.c - 1) if (ReadCommand(&index) != error)
+	while (index < fData.A + fData.c - 1) if (ReadCommand(&index) != com_error)
 		out->c++; /* Посчитать количество верных комманд */
 	out->A = (enum commands*)malloc(out->c*sizeof(enum commands*));
 	if (out->A == NULL) return -1; 
@@ -304,7 +270,7 @@ errno_t ReadsCommands(const char_count fData, commands_count * out)
 	while(index < fData.A + fData.c - 1)
 	{
 		buffer = ReadCommand(&index);
-		if (buffer != error)
+		if (buffer != com_error)
 		{
 			out->A[i++] = buffer;
 		}
@@ -402,7 +368,7 @@ update - лента, на которую помещена вся память
 Возвращаемое значение:
 -1 Комманда com вне границах массива field.A .. field.A + field.c - 1
 0 Всё сработало нормально
-1 Не понятно, что делать с данной командой
+-2 Не понятно, что делать с данной командой
 2 Ошибка чтения из stdin.
 */
 errno_t Step(const commands_count field, enum commands ** com, struct Lenta * update)
@@ -412,42 +378,71 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 	ExpandableLenta_MemoryAdjustment(update);
 	switch (**com)
 	{
-	case movl:
+	case com_movl:
 		update->position--;
 		(*com)++;
 		return 0;
-	case movr:
+	case com_movr:
 		update->position++;
 		(*com)++;
 		return 0;
-	case inc:
+	case com_inc:
 		update->position[0]++;
 		(*com)++;
 		return 0;
-	case dec:
+	case com_dec:
 		update->position[0]--;
 		(*com)++;
 		return 0;
-	case printc:
+	case com_printc:
 		printf("%c\n", update->position[0]);
 		(*com)++;
 		return 0;
-	case print:
+	case com_print:
 		printf("%hu\n", (unsigned short int)update->position[0]);
 		(*com)++;
 		return 0;
-	case get:
-#ifdef _CRT_SECURE_NO_WARNINGS
-		printf("byte: ");
+	case com_getc:
 		(*com)++;
-		if (scanf("%hu", &buffer) != 1) return 2;
+#ifdef _CRT_SECURE_NO_WARNINGS
+		printf("char: ");
+		while (scanf("%c", (char *)&buffer) != 1)
+		{
+			printf("error... ");
+			gets_u((char *)&buffer, sizeof(buffer));
+			printf("Again\nchar: ");
 #else
-		printf_s("byte: ");
-		if (scanf_s("%hu", &buffer) != 1) return 2;
+		printf_s("char: ");
+		while (scanf_s("%c", (char *)&buffer) != 1)
+		{
+			printf("error... ");
+			gets_u((char *)&buffer, sizeof(buffer));
+			printf_s("Again\nchar: ");
 #endif
+		}
 		update->position[0] = (char)buffer;
 		return 0;
-	case begin:
+	case com_get:
+		(*com)++;
+#ifdef _CRT_SECURE_NO_WARNINGS
+		printf("byte: ");
+		while (scanf("%hu", &buffer) != 1)
+		{
+			printf("error... ");
+			gets_u((char *)&buffer, sizeof(buffer));
+			printf("Again\nbyte: ");
+#else
+		printf_s("byte: ");
+		while (scanf_s("%hu", &buffer) != 1)
+		{
+			printf("error... ");
+			gets_u(&buffer, sizeof(buffer));
+			printf_s("Again\nbyte: ");
+#endif
+		}
+		update->position[0] = (char)buffer;
+		return 0;
+	case com_begin:
 		if (update->position[0] == 0)
 		{
 			/* переход в end + 1 */
@@ -456,8 +451,8 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			{
 				(*com)++;
 				if(/* *com < field.A || */*com > field.A + field.c - 1) return -1;
-				if(**com == begin) find++;
-				else if(**com == end) find--;
+				if(**com == com_begin) find++;
+				else if(**com == com_end) find--;
 			}
 			(*com)++;
 			return 0;
@@ -467,7 +462,7 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			(*com)++;
 			return 0;
 		}
-	case end:
+	case com_end:
 		if (update->position[0] != 0)
 		{
 			/* переход обратно на родственную begin + 1. */
@@ -476,8 +471,8 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			{
 				(*com)--;
 				if(*com < field.A/* || *com > fild.A + field.c - 1*/) return -1;
-				if(**com == begin) find++;
-				else if(**com == end) find--;
+				if(**com == com_begin) find++;
+				else if(**com == com_end) find--;
 			}
 			(*com)++;
 			return 0;
@@ -487,9 +482,15 @@ errno_t Step(const commands_count field, enum commands ** com, struct Lenta * up
 			(*com)++;
 			return 0;
 		}
-	default:
+	case com_comment:
 		(*com)++;
 		return 1;
+	case com_error:
+		(*com)++;
+		return 1;
+	default:
+		(*com)++;
+		return -2;
 	}
 }
 
@@ -585,23 +586,103 @@ reset:
 
 #endif _TURING_MACHINE_H_MUWA_LABA
 
-
 void main(int argc, char * argv[])
 {
 	char flag[2] = { 0 };
-	while (1)
+	while (1u)
 	{
 		UserInterface(argc, argv);
-		gets_u(&flag, 2u);
+		fseek(stdin, 0l, SEEK_END); /* Очищает очередь ввода. */
+		printf("\nquite? (q or nothing)\n");
+		*flag = 0u;
+		gets_u(flag, sizeof(flag));
 		if (*flag == 'q' || *flag == 'Q') return;
 	}
 }
 
 
+#if 1 == 2
+
+/* Реализует тип байта. */
+typedef union
+{
+	unsigned char v; /* Его значение */
+					 /* По-битовое значение */
+	struct
+	{
+		int a0 : 1;
+		int a1 : 1;
+		int a2 : 1;
+		int a3 : 1;
+		int a4 : 1;
+		int a5 : 1;
+		int a6 : 1;
+		int a7 : 1;
+	} b;
+} byte;
 
 
+/* Реализует тип байта. */
+typedef union
+{
+	signed char v; /* Его значение */
+				   /* По-битовое значение */
+	struct
+	{
+		unsigned char a0 : 1;
+		unsigned char a1 : 1;
+		unsigned char a2 : 1;
+		unsigned char a3 : 1;
+		unsigned char a4 : 1;
+		unsigned char a5 : 1;
+		unsigned char a6 : 1;
+		unsigned char a7 : 1;
+	} b;
+} sbyte;
 
 
+/* Отвечает на вопрос, равны ли два блока памяти. */
+char IsEqute(const void * A, const void * B, size_t size)
+{
+	register size_t i = 0u;
+	for (; i < size; i++)
+	{
+		if (((char*)A)[i] != ((char*)B)[i]) return (char)0;
+	}
+	return (char)1;
+}
+
+void Equate(void * A, const void * B, size_t size)
+{
+#ifdef _CRT_SECURE_NO_WARNINGS
+	memcpy(A, B, size);
+#else
+	register size_t i = 0u;
+	for (; i < size; i++)
+	{
+		((char*)A)[i] = ((char*)B)[i];
+	}
+#endif
+}
+
+/* Находит минимальное из данных.
+count - количество данных
+size - размер одной единицы данных
+result - сюда будет отправляться ответ
+[образец] - размер блока, который следует исключить из выборки
+[данные], [данные]... - среди них идёт поиск минимального. Исключаются те, которые равны образцу*/
+void _SearchMinimumBesides(size_t count, size_t size, void * result, ...)
+{
+	size_t i = 0;
+	char * index = (char*)result + size;
+	if (count == 0 || size == 0 || result == NULL) return;
+	Equate(result, index, size);
+	i++, index += size;
+	for (; i < count; i++, index += size)
+	{
+
+	}
+}
 
 
 
@@ -667,3 +748,5 @@ void main(int argc, char * argv[])
 	}
 	return output;
 }*/
+
+#endif

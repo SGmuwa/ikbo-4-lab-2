@@ -1,6 +1,3 @@
 ﻿  Source.c
-c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(52): warning C4267: функция: преобразование из "size_t" в "int"; возможна потеря данных
-c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(595): warning C4047: функция: "char *" отличается по уровням косвенного обращения от "char (*)[2]"
-c:\users\muwa\dropbox\программирование\c\turing laba 2 prog sem 2\tr\source.c(595): warning C4024: gets_u: различные типы для формального и фактического параметров 1
   Tr.vcxproj -> C:\Users\Muwa\Dropbox\Программирование\C\Turing laba 2 prog sem 2\x64\Debug\Tr.exe
   Tr.vcxproj -> C:\Users\Muwa\Dropbox\Программирование\C\Turing laba 2 prog sem 2\x64\Debug\Tr.pdb (Partial PDB)
